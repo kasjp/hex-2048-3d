@@ -1,93 +1,108 @@
-import {
-  Scene3D,
-  ExtendedObject3D,
-  THREE,
-  ExtendedGroup,
-} from "@enable3d/phaser-extension";
+import PrimitiveObject from "@engine/primitive/PrimitiveObject";
 import Helpers from "@Helpers";
-export default class HexTile extends ExtendedObject3D {
-  private _highlightMagnitude = 50;
-  mesh = new THREE.Mesh();
-  size = new THREE.Vector3();
-  coordinates = new Phaser.Math.Vector3();
-  color = 0x33aa22;
-  constructor(
-    _parent: THREE.Object3D,
-    private _scene: Scene3D,
-    private obj: any
-  ) {
-    super();
-    this.add(obj.scene);
-    this.mesh = obj.scene.children[0];
-    // console.log(obj.scene.children[0].geometry);
-    this.castShadow = this.receiveShadow = true;
-    this.changeColor(this.color);
-    this.mesh.geometry.computeBoundingBox();
-    this.mesh.geometry.boundingBox?.getSize(this.size);
-    _parent.add(this);
+import { THREE, Scene3D } from "@enable3d/phaser-extension";
+
+export default class HexTile extends PrimitiveObject {
+  private _highlightMagnitude = -200;
+  highlightColor = 0xf3ffff;
+  coordinates = new Phaser.Math.Vector2();
+  text: Phaser.GameObjects.Text;
+  value = 0;
+  public static directions: {
+    [key in Helpers.Hex.DIRECTION_STRING]: Phaser.Math.Vector2;
+  } = {
+    NW: new Phaser.Math.Vector2(0, -1),
+    NE: new Phaser.Math.Vector2(1, -1),
+    W: new Phaser.Math.Vector2(-1, 0),
+    E: new Phaser.Math.Vector2(1, 0),
+    SW: new Phaser.Math.Vector2(-1, 1),
+    SE: new Phaser.Math.Vector2(0, 1),
+  };
+  public static direction(direction: DIRECTION_STRING): Phaser.Math.Vector2 {
+    return this.directions[direction];
   }
-  static create(
-    _parent: ExtendedGroup,
-    _scene: Scene3D,
-    assetUrl = "/assets/tiles/hex.glb"
-  ): Promise<HexTile> {
-    return new Promise((resolve, reject) => {
-      _scene.third.load
-        .gltf(assetUrl)
-        .then((obj) => {
-          resolve(new HexTile(_parent, _scene, obj));
-        })
-        .catch(reject);
+
+  public neighborCoords(direction: DIRECTION_STRING): Phaser.Math.Vector2 {
+    return this.coordinates.add(HexTile.direction(direction));
+  }
+
+  get tileIdString() {
+    return Helpers.Vector.toTileIdString(this.coordinates);
+  }
+  constructor(_scene: Scene3D, obj: any, _parent?: THREE.Object3D) {
+    super(_scene, obj, _parent);
+    this.text = this._scene.third.scene3D.make.text({
+      x: 0,
+      y: 0,
+      text: "0",
+      style: {
+        fontSize: "16px",
+        fontFamily: "Arial",
+        color: "#ffffff",
+        align: "center",
+      },
     });
+    // this(text);
   }
-  changeColor(color: number, save = true) {
+  setEmissive(color: number, save = true) {
     if (save) {
-      this.color = color;
+      this.highlightColor = color;
     }
     this.traverse((child) => {
-      child.material = this._scene.third.add.material({
-        standard: {
-          color: color,
-          emissive: color,
-          roughness: 0.4,
-          metalness: 0.3,
-        },
-      });
+      if (child.material && child.material) {
+        (child.material as any).emissive.set(color);
+        return;
+      }
     });
   }
 
-  setCoordinates(x: number, y: number, z: number) {
-    this.coordinates = new Phaser.Math.Vector3(x, y, z);
+  setCoordinates(q: number, r: number) {
+    this.coordinates = new Phaser.Math.Vector2(q, r);
     this.position.set(
-      (z % 2 == 0 ? this.size.x / 2 : 0) + x * this.size.x,
-      y,
-      (3 / 4) * this.size.z * z
+      Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r,
+      0,
+      (3 / 2) * r
     );
-    this.name = "tile-" + Helpers.Vector3.toTileIdString(this.coordinates);
+    this.name = "tile-" + this.tileIdString;
   }
 
   onPointerOver() {
     this._scene.tweens.addCounter({
-      from: 0,
+      from: -255,
       to: this._highlightMagnitude,
       duration: 300,
       delay: 0,
       ease: "ease",
       onUpdate: (tween, target, key, current) => {
-        this.changeColor(Helpers.Color.shade(this.color, current), false);
+        this.setEmissive(
+          Helpers.Color.shade(this.highlightColor, current),
+          false
+        );
       },
     });
   }
   onPointerOut() {
     this._scene.tweens.addCounter({
       from: this._highlightMagnitude,
-      to: 0,
+      to: -255,
       duration: 300,
       delay: 0,
       ease: "ease",
       onUpdate: (tween, target, key, current) => {
-        this.changeColor(Helpers.Color.shade(this.color, current), false);
+        this.setEmissive(
+          Helpers.Color.shade(this.highlightColor, current),
+          false
+        );
       },
     });
+  }
+  update(delta: number) {
+    const textPos = this._scene.third.transform.from3dto2d(this.position);
+    this.text.text = this.value ? this.value.toString() : "";
+    const textBounds = this.text.getBounds();
+    this.text.setPosition(
+      textPos.x - textBounds.width / 2,
+      textPos.y - textBounds.height / 2
+    );
   }
 }
