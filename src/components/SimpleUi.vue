@@ -15,11 +15,11 @@
   });
   const inputColor = ref("");
 
-  watch(inputColor, (val) => {
-    if (GameState.hoverTile) {
-      GameState.hoverTile.setEmissive(parseInt(val));
-    }
-  });
+  // watch(inputColor, (val) => {
+  //   if (GameState.hoverTile) {
+  //     GameState.hoverTile.setEmissive(parseInt(val));
+  //   }
+  // });
 </script>
 <template>
   <div class="ui">

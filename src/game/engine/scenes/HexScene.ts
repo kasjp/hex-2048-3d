@@ -6,7 +6,7 @@ import Helpers from "@Helpers";
 export default abstract class HexScene extends PrimitiveScene {
   tilemap!: HexGrid;
   // orbitControls: any;
-  constructor(sceneName: string) {
+  constructor(sceneName: string, public gridSize: number) {
     super(sceneName);
   }
 
@@ -17,14 +17,13 @@ export default abstract class HexScene extends PrimitiveScene {
   async create() {
     await super.create();
 
-    const mapSize = 3;
-    this.tilemap = new HexGrid(this, mapSize);
+    this.tilemap = new HexGrid(this, this.gridSize);
     await this.tilemap.generateHexGrid("base");
 
-    this.camera.calculateViewport(mapSize);
+    this.camera.calculateViewport(this.gridSize);
     window.addEventListener(
       "resize",
-      this.camera.calculateViewport.bind(this.camera, mapSize)
+      this.camera.calculateViewport.bind(this.camera, this.gridSize)
     );
     this.camera.lockRotation = this.camera.rotation.clone();
     if (this.camera.orbitControls) {
@@ -32,20 +31,6 @@ export default abstract class HexScene extends PrimitiveScene {
       this.camera.orbitControls.touches.ONE = 0;
       this.camera.orbitControls.mouseButtons.LEFT = 0;
       this.camera.orbitControls.mouseButtons.RIGHT = 0;
-    }
-    if (this.input.keyboard) {
-      this.input.keyboard.addKeys(Helpers.Hex.ENABLED_KEYS);
-      this.input.keyboard.on("keydown", (key: any) => {
-        if (Helpers.Hex.ENABLED_KEYS.includes(key.key.toUpperCase())) {
-          this.shiftTiles(key.key);
-          const emptyTiles = this.tilemap
-            .getTiles()
-            .filter((tile) => tile.value === 0);
-          if (emptyTiles.length) {
-            emptyTiles[Math.floor(Math.random() * emptyTiles.length)].value = 2;
-          }
-        }
-      });
     }
   }
 
@@ -79,47 +64,10 @@ export default abstract class HexScene extends PrimitiveScene {
       tile.value = value;
     }
   }
-  tryMergeTile(
-    tile: HexTile,
-    directionKey: keyof typeof Helpers.Hex.DIRECTION_KEYS
-  ) {
-    if (tile.value === 0) return;
-    const neighborTile = this.tilemap.getNeighborTile(tile, directionKey);
-    if (neighborTile) {
-      if (neighborTile.value == 0) {
-        neighborTile.value = tile.value;
-        tile.value = 0;
-        this.tryMergeTile(neighborTile, directionKey);
-      } else if (neighborTile.value == tile.value) {
-        neighborTile.value += tile.value;
-        tile.value = 0;
-      } else {
-        const nextNeighbor = this.tilemap.getNeighborTile(
-          neighborTile,
-          directionKey
-        );
-        if (nextNeighbor) {
-          this.tryMergeTile(neighborTile, directionKey);
-        }
-      }
-    }
-  }
-  shiftTiles(keyboardKey: string) {
-    const directionKey =
-      keyboardKey.toUpperCase() as keyof typeof Helpers.Hex.DIRECTION_KEYS;
-    const filledTiles = this.tilemap
-      .getTiles()
-      .filter((tile) => tile.value != 0);
-    filledTiles.forEach((tile) => this.tryMergeTile(tile, directionKey));
-  }
+
   update(time: number, delta: number) {
     super.update(time, delta);
     GameState.hoverTile = this.getTileAtPointer();
-    const allTiles = this.tilemap.getTiles();
-    if (allTiles.length) {
-      // allTiles[Math.floor(Math.random() * allTiles.length)].value *= 2;
-    }
-
     this.tilemap.update(delta);
   }
 }
