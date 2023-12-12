@@ -1,6 +1,6 @@
 import PrimitiveObject from "@engine/primitive/PrimitiveObject";
-import Helpers from "@Helpers";
 import { THREE, Scene3D } from "@enable3d/phaser-extension";
+import Helpers from "@Helpers";
 
 export default class HexTile extends PrimitiveObject {
   private _highlightMagnitude = -200;
@@ -9,7 +9,7 @@ export default class HexTile extends PrimitiveObject {
   text: Phaser.GameObjects.Text;
   value = 0;
   public static directions: {
-    [key in Helpers.Hex.DIRECTION_STRING]: Phaser.Math.Vector2;
+    [key in keyof typeof Helpers.Hex.DIRECTION_STRING]: Phaser.Math.Vector2;
   } = {
     NW: new Phaser.Math.Vector2(0, -1),
     NE: new Phaser.Math.Vector2(1, -1),
@@ -18,14 +18,24 @@ export default class HexTile extends PrimitiveObject {
     SW: new Phaser.Math.Vector2(-1, 1),
     SE: new Phaser.Math.Vector2(0, 1),
   };
-  public static direction(direction: DIRECTION_STRING): Phaser.Math.Vector2 {
+  public static direction(
+    direction: keyof typeof Helpers.Hex.DIRECTION_STRING
+  ): Phaser.Math.Vector2 {
     return this.directions[direction];
   }
 
-  public neighborCoords(direction: DIRECTION_STRING): Phaser.Math.Vector2 {
+  public neighborCoords(
+    direction: keyof typeof Helpers.Hex.DIRECTION_STRING
+  ): Phaser.Math.Vector2 {
     return this.coordinates.add(HexTile.direction(direction));
   }
-
+  public neighborCoordsByKey(
+    keyboardKey: keyof typeof Helpers.Hex.DIRECTION_KEYS
+  ) {
+    return this.neighborCoords(
+      Helpers.Hex.DIRECTION_STRING[Helpers.Hex.DIRECTION_KEYS[keyboardKey]]
+    );
+  }
   get tileIdString() {
     return Helpers.Vector.toTileIdString(this.coordinates);
   }
