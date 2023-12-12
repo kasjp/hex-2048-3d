@@ -27,7 +27,10 @@ export default class HexTile extends PrimitiveObject {
   public neighborCoords(
     direction: keyof typeof Helpers.Hex.DIRECTION_STRING
   ): Phaser.Math.Vector2 {
-    return this.coordinates.add(HexTile.direction(direction));
+    return new Phaser.Math.Vector2(
+      this.coordinates.x + HexTile.direction(direction).x,
+      this.coordinates.y + HexTile.direction(direction).y
+    );
   }
   public neighborCoordsByKey(
     keyboardKey: keyof typeof Helpers.Hex.DIRECTION_KEYS
