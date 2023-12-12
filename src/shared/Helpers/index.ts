@@ -1,8 +1,8 @@
 import Color from "./color";
-import Vector2 from "./vector2";
-import Vector3 from "./vector3";
+import Vector from "./vector";
+import Hex from "./hex";
 export default {
   Color,
-  Vector2,
-  Vector3,
+  Vector,
+  Hex,
 };
