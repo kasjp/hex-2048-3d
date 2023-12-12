@@ -19,7 +19,6 @@ export default abstract class HexScene extends PrimitiveScene {
 
     this.tilemap = new HexGrid(this, this.gridSize);
     await this.tilemap.generateHexGrid("base");
-
     this.camera.calculateViewport(this.gridSize);
     window.addEventListener(
       "resize",

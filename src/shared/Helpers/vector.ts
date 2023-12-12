@@ -13,7 +13,7 @@ namespace Vector {
       -(y / window.innerHeight) * 2 + 1
     );
   }
-  export function toTileIdString(vector: THREE.Vec2 | THREE.Vec3) {
+  export function toTileIdString(vector: { x: number; y: number }) {
     return `${vector.x}::${vector.y}`;
   }
 }
