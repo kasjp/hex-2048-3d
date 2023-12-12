@@ -17,9 +17,9 @@ export default abstract class HexScene extends PrimitiveScene {
   async create() {
     await super.create();
 
-    this.tilemap = new HexGrid(this);
-    const mapSize = 4;
-    await this.tilemap.generateHexGrid("base", mapSize);
+    const mapSize = 3;
+    this.tilemap = new HexGrid(this, mapSize);
+    await this.tilemap.generateHexGrid("base");
 
     this.camera.calculateViewport(mapSize);
     window.addEventListener(
@@ -35,9 +35,17 @@ export default abstract class HexScene extends PrimitiveScene {
     }
     if (this.input.keyboard) {
       this.input.keyboard.addKeys(Helpers.Hex.ENABLED_KEYS);
-      this.input.keyboard.on("keydown", (key: Phaser.Input.Keyboard.Key) =>
-        this.tilemap.shiftTiles(key.keyCode)
-      );
+      this.input.keyboard.on("keydown", (key: any) => {
+        if (Helpers.Hex.ENABLED_KEYS.includes(key.key.toUpperCase())) {
+          this.shiftTiles(key.key);
+          const emptyTiles = this.tilemap
+            .getTiles()
+            .filter((tile) => tile.value === 0);
+          if (emptyTiles.length) {
+            emptyTiles[Math.floor(Math.random() * emptyTiles.length)].value = 2;
+          }
+        }
+      });
     }
   }
 
@@ -71,7 +79,39 @@ export default abstract class HexScene extends PrimitiveScene {
       tile.value = value;
     }
   }
-
+  tryMergeTile(
+    tile: HexTile,
+    directionKey: keyof typeof Helpers.Hex.DIRECTION_KEYS
+  ) {
+    if (tile.value === 0) return;
+    const neighborTile = this.tilemap.getNeighborTile(tile, directionKey);
+    if (neighborTile) {
+      if (neighborTile.value == 0) {
+        neighborTile.value = tile.value;
+        tile.value = 0;
+        this.tryMergeTile(neighborTile, directionKey);
+      } else if (neighborTile.value == tile.value) {
+        neighborTile.value += tile.value;
+        tile.value = 0;
+      } else {
+        const nextNeighbor = this.tilemap.getNeighborTile(
+          neighborTile,
+          directionKey
+        );
+        if (nextNeighbor) {
+          this.tryMergeTile(neighborTile, directionKey);
+        }
+      }
+    }
+  }
+  shiftTiles(keyboardKey: string) {
+    const directionKey =
+      keyboardKey.toUpperCase() as keyof typeof Helpers.Hex.DIRECTION_KEYS;
+    const filledTiles = this.tilemap
+      .getTiles()
+      .filter((tile) => tile.value != 0);
+    filledTiles.forEach((tile) => this.tryMergeTile(tile, directionKey));
+  }
   update(time: number, delta: number) {
     super.update(time, delta);
     GameState.hoverTile = this.getTileAtPointer();
