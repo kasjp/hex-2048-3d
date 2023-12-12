@@ -7,18 +7,13 @@ export default class PlayScene extends HexScene {
   }
   async create() {
     await super.create();
-
+    this.generateTile();
     if (this.input.keyboard) {
       this.input.keyboard.addKeys(Helpers.Hex.ENABLED_KEYS);
       this.input.keyboard.on("keydown", (key: any) => {
         if (Helpers.Hex.ENABLED_KEYS.includes(key.key.toUpperCase())) {
           this.shiftTiles(key.key);
-          const emptyTiles = this.tilemap
-            .getTiles()
-            .filter((tile) => tile.value === 0);
-          if (emptyTiles.length) {
-            emptyTiles[Math.floor(Math.random() * emptyTiles.length)].value = 2;
-          }
+          this.generateTile();
         }
       });
     }
@@ -27,6 +22,22 @@ export default class PlayScene extends HexScene {
       .forEach((tile) =>
         tile.setEmissive(Helpers.Color.shade(0x111111, -255), true)
       );
+  }
+  generateTile(q?: number, r?: number, value?: number) {
+    if (
+      typeof q == "number" &&
+      typeof r == "number" &&
+      typeof value == "number"
+    ) {
+      this.setTileValue(q, r, value);
+    } else {
+      const emptyTiles = this.tilemap
+        .getTiles()
+        .filter((tile) => tile.value === 0);
+      if (emptyTiles.length) {
+        emptyTiles[Math.floor(Math.random() * emptyTiles.length)].value = 2;
+      }
+    }
   }
   tryMergeTile(
     tile: HexTile,
@@ -42,14 +53,11 @@ export default class PlayScene extends HexScene {
       } else if (neighborTile.value == tile.value) {
         neighborTile.value += tile.value;
         tile.value = 0;
-      } else {
-        const nextNeighbor = this.tilemap.getNeighborTile(
-          neighborTile,
-          directionKey
-        );
-        if (nextNeighbor) {
-          this.tryMergeTile(neighborTile, directionKey);
-        }
+      }
+
+      this.tryMergeTile(neighborTile, directionKey);
+      if (neighborTile.value == 0) {
+        this.tryMergeTile(tile, directionKey);
       }
     }
   }

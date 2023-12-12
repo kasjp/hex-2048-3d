@@ -3,11 +3,18 @@ import { THREE, Scene3D } from "@enable3d/phaser-extension";
 import Helpers from "@Helpers";
 
 export default class HexTile extends PrimitiveObject {
-  private _highlightMagnitude = -200;
-  highlightColor = 0xf3ffff;
+  private _highlightMagnitude = -255;
+  highlightColor = 0x111111;
   coordinates = new Phaser.Math.Vector2();
   text: Phaser.GameObjects.Text;
-  value = 0;
+  _value = 0;
+  get value() {
+    return this._value;
+  }
+  set value(value: number) {
+    this._highlightMagnitude = this._value ? Math.sqrt(this._value) * 6 : -255;
+    this._value = value;
+  }
   public static directions: {
     [key in keyof typeof Helpers.Hex.DIRECTION_STRING]: Phaser.Math.Vector2;
   } = {
@@ -109,6 +116,22 @@ export default class HexTile extends PrimitiveObject {
       },
     });
   }
+  animateHighlight(delta: number) {
+    const targetMagnitude = this.value ? Math.sqrt(this.value) * 6 : -255;
+    if (Math.abs(targetMagnitude - this._highlightMagnitude) > 1) {
+      this._highlightMagnitude = Phaser.Math.Linear(
+        this._highlightMagnitude,
+        targetMagnitude,
+        0.01 * delta
+      );
+    } else {
+      this._highlightMagnitude = targetMagnitude;
+    }
+    const r = this.value;
+    const b = Math.sqrt(this.value);
+    const g = Math.abs(Math.sin(this.value)) * this.value;
+    this.setEmissive(g | (b << 8) | (r << 16), true);
+  }
   update(delta: number) {
     const textPos = this._scene.third.transform.from3dto2d(this.position);
     this.text.text = this.value ? this.value.toString() : "";
@@ -117,5 +140,6 @@ export default class HexTile extends PrimitiveObject {
       textPos.x - textBounds.width / 2,
       textPos.y - textBounds.height / 2
     );
+    this.animateHighlight(delta);
   }
 }

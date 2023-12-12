@@ -19,7 +19,7 @@ export default class HexGrid extends ExtendedGroup {
     this._tilemap.set(tile.tileIdString, tile);
   }
 
-  generateHexGrid(tileAssetId: TAssetId = "base") {
+  async generateHexGrid(tileAssetId: TAssetId = "base") {
     for (let q = -this._gridSize + 1; q < this._gridSize; q++) {
       for (let r = -this._gridSize + 1; r < this._gridSize; r++) {
         const s = -q - r;
@@ -28,7 +28,7 @@ export default class HexGrid extends ExtendedGroup {
           Math.abs(r) <= this._gridSize - 1 &&
           Math.abs(s) <= this._gridSize - 1
         ) {
-          this.createTileAt(q, r, tileAssetId);
+          await this.createTileAt(q, r, tileAssetId);
         }
       }
     }
